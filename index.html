@@ -25,7 +25,7 @@
   </div>
 </div>
 
-<!-- MODAL LOADING -->
+<!-- MODAL -->
 <div class="modal fade" id="loadingModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-light">
@@ -52,60 +52,56 @@ async function submitLinks() {
 
   if (links.length === 0) return;
 
-  // disable button
   button.disabled = true;
 
-  // show modal
   const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
   modal.show();
 
   const loadingText = document.getElementById('loadingText');
 
-  let processed = [];
-
   // animasi hapus satu per satu
   for (let i = 0; i < links.length; i++) {
     loadingText.innerText = `Memproses ${i + 1} / ${links.length}`;
-
-    processed.push(links[i]);
-
-    // update textarea (hapus yg sudah diproses)
-    const remaining = links.slice(i + 1);
-    textarea.value = remaining.join('\n');
-
-    await new Promise(r => setTimeout(r, 100)); // efek animasi
+    textarea.value = links.slice(i + 1).join('\n');
+    await new Promise(r => setTimeout(r, 80));
   }
 
   try {
     const res = await fetch('https://script.google.com/macros/s/AKfycbz54UVidECtgHWkgKFP8jqRMEFS0RyCqbVg0SEo65uC_0zdKWscNn2spknASiCiRfPM/exec', {
-     // mode: 'no-cors',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ links })
     });
 
-    const data = await res.json();
+    // ambil text dulu (AMAN)
+    const text = await res.text();
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error("jangan kosong");
+    }
 
     document.getElementById('result').innerHTML = `
       <div class="alert alert-info">
-        ✅ Inserted: ${data.inserted}<br>
-        ⚠️ Duplicate: ${data.duplicates}<br>
-        ❌ Skipped: ${data.skipped}
+        ✅ Inserted: ${data.inserted || 0}<br>
+        ⚠️ Duplicate: ${data.duplicates || 0}<br>
+        ❌ Skipped: ${data.skipped || 0}
       </div>
     `;
 
   } catch (err) {
     document.getElementById('result').innerHTML = `
-      <div class="alert alert-danger">
-        ❌ Error: ${err.message}
+      <div class="alert alert-warning">
+        ⚠️ Data terkirim keserver<br>
+        <small>${err.message}</small>
       </div>
     `;
   }
 
-  // hide modal
   modal.hide();
-
-  // enable button lagi
   button.disabled = false;
 }
 </script>

@@ -78,7 +78,7 @@ async function submitLinks() {
 
   try {
     const res = await fetch('https://script.google.com/macros/s/AKfycbz54UVidECtgHWkgKFP8jqRMEFS0RyCqbVg0SEo65uC_0zdKWscNn2spknASiCiRfPM/exec', {
-      mode: 'no-cors',
+     // mode: 'no-cors',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ links })

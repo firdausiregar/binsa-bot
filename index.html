@@ -13,6 +13,10 @@
     <div class="card-body">
       <h3 class="mb-3">🚀 Social Link Binsa</h3>
 
+      <!-- INPUT USERNAME -->
+      <input id="username" class="form-control mb-3" 
+        placeholder="Masukkan username (wajib)">
+
       <textarea id="links" class="form-control mb-3" rows="8"
         placeholder="Paste banyak link disini..."></textarea>
 
@@ -42,10 +46,15 @@
 <script>
 async function submitLinks() {
   const textarea = document.getElementById('links');
+  const username = document.getElementById('username').value.trim();
   const button = document.getElementById('btnSubmit');
-  const raw = textarea.value;
 
-  let links = raw
+  if (!username) {
+    alert("Username wajib diisi!");
+    return;
+  }
+
+  let links = textarea.value
     .split('\n')
     .map(x => x.trim())
     .filter(x => x);
@@ -59,7 +68,7 @@ async function submitLinks() {
 
   const loadingText = document.getElementById('loadingText');
 
-  // animasi hapus satu per satu
+  // animasi
   for (let i = 0; i < links.length; i++) {
     loadingText.innerText = `Memproses ${i + 1} / ${links.length}`;
     textarea.value = links.slice(i + 1).join('\n');
@@ -67,37 +76,28 @@ async function submitLinks() {
   }
 
   try {
-    const res = await fetch('https://script.google.com/macros/s/AKfycbz54UVidECtgHWkgKFP8jqRMEFS0RyCqbVg0SEo65uC_0zdKWscNn2spknASiCiRfPM/exec', {
-      mode: 'no-cors',
+    await fetch('https://script.google.com/macros/s/AKfycbz54UVidECtgHWkgKFP8jqRMEFS0RyCqbVg0SEo65uC_0zdKWscNn2spknASiCiRfPM/exec', {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ links })
+      body: JSON.stringify({ 
+        username: username,
+        links: links 
+      })
     });
 
-    // ambil text dulu (AMAN)
-    const text = await res.text();
-
-    let data;
-
-    try {
-      data = JSON.parse(text);
-    } catch {
-      throw new Error("jangan kosong");
-    }
-
     document.getElementById('result').innerHTML = `
-      <div class="alert alert-info">
-        ✅ Inserted: ${data.inserted || 0}<br>
-        ⚠️ Duplicate: ${data.duplicates || 0}<br>
-        ❌ Skipped: ${data.skipped || 0}
+      <div class="alert alert-success">
+        ✅ Data berhasil dikirim<br>
+        👤 Username: ${username}<br>
+        🔗 Total Link: ${links.length}
       </div>
     `;
 
   } catch (err) {
     document.getElementById('result').innerHTML = `
-      <div class="alert alert-warning">
-        ⚠️ Data terkirim keserver<br>
-        <small>${err.message}</small>
+      <div class="alert alert-danger">
+        ❌ Error: ${err.message}
       </div>
     `;
   }
@@ -109,3 +109,4 @@ async function submitLinks() {
 
 </body>
 </html>
+  

@@ -16,7 +16,7 @@
       <textarea id="links" class="form-control mb-3" rows="8"
         placeholder="Paste banyak link disini..."></textarea>
 
-      <button onclick="submitLinks()" class="btn btn-primary w-100">
+      <button id="btnSubmit" onclick="submitLinks()" class="btn btn-primary w-100">
         Proses Sekarang
       </button>
 
@@ -25,30 +25,87 @@
   </div>
 </div>
 
+<!-- MODAL LOADING -->
+<div class="modal fade" id="loadingModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-body text-center">
+        <div class="spinner-border text-primary mb-3"></div>
+        <h5 id="loadingText">Memproses...</h5>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
 async function submitLinks() {
-  const raw = document.getElementById('links').value;
+  const textarea = document.getElementById('links');
+  const button = document.getElementById('btnSubmit');
+  const raw = textarea.value;
 
-  const links = raw
+  let links = raw
     .split('\n')
     .map(x => x.trim())
     .filter(x => x);
 
-  const res = await fetch('https://script.google.com/macros/s/AKfycbz54UVidECtgHWkgKFP8jqRMEFS0RyCqbVg0SEo65uC_0zdKWscNn2spknASiCiRfPM/exec', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ links })
-  });
+  if (links.length === 0) return;
 
-  const data = await res.json();
+  // disable button
+  button.disabled = true;
 
-  document.getElementById('result').innerHTML = `
-    <div class="alert alert-info">
-      ✅ Inserted: ${data.inserted}<br>
-      ⚠️ Duplicate: ${data.duplicates}<br>
-      ❌ Skipped: ${data.skipped}
-    </div>
-  `;
+  // show modal
+  const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+  modal.show();
+
+  const loadingText = document.getElementById('loadingText');
+
+  let processed = [];
+
+  // animasi hapus satu per satu
+  for (let i = 0; i < links.length; i++) {
+    loadingText.innerText = `Memproses ${i + 1} / ${links.length}`;
+
+    processed.push(links[i]);
+
+    // update textarea (hapus yg sudah diproses)
+    const remaining = links.slice(i + 1);
+    textarea.value = remaining.join('\n');
+
+    await new Promise(r => setTimeout(r, 100)); // efek animasi
+  }
+
+  try {
+    const res = await fetch('https://script.google.com/macros/s/AKfycbz54UVidECtgHWkgKFP8jqRMEFS0RyCqbVg0SEo65uC_0zdKWscNn2spknASiCiRfPM/exec', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ links })
+    });
+
+    const data = await res.json();
+
+    document.getElementById('result').innerHTML = `
+      <div class="alert alert-info">
+        ✅ Inserted: ${data.inserted}<br>
+        ⚠️ Duplicate: ${data.duplicates}<br>
+        ❌ Skipped: ${data.skipped}
+      </div>
+    `;
+
+  } catch (err) {
+    document.getElementById('result').innerHTML = `
+      <div class="alert alert-danger">
+        ❌ Error: ${err.message}
+      </div>
+    `;
+  }
+
+  // hide modal
+  modal.hide();
+
+  // enable button lagi
+  button.disabled = false;
 }
 </script>
 
